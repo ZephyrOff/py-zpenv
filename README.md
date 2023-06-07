@@ -30,6 +30,7 @@ pip install zpenv
 >- --tag = Ajouter des tags (séparés avec ,)
 >- --comment = Ajouter un commentaire
 >- --projectfolder = Spécifier le dossier du projet (emplacement du code)
+>- --prompt = Spécifier le message dans le prompt
 (D'autres options sont disponibles)
 <br>
 
