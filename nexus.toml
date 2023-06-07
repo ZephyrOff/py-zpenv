@@ -1,0 +1,47 @@
+[project]
+name = "zpenv"
+version = "1.2.0"
+description = "Gestionnaire d'environnement virtuel"
+mainfile = "__init__.py"
+requires-python = ">=3.6"
+
+[project.metadata]
+authors = ["ZephyrOff"]
+maintainers = []
+readme = "README.md"
+license = "MIT License"
+license_file = "LICENSE"
+keywords = ["venv","virtualenv","terminal","zephyroff"]
+classifiers = ["Development Status :: 5 - Production/Stable", "Environment :: Console", "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3"]
+copyright = ""
+changelog = "changelog.md"
+
+[project.urls]
+changelog = ""
+homepage = "https://github.com/ZephyrOff/py-zpenv"
+documentation = "https://github.com/ZephyrOff/py-zpenv"
+
+[project.dependencies]
+zpp_args = "N.A"
+zpp_config = "N.A"
+psutil = "N.A"
+
+[project.dependencies.windows]
+
+[project.dependencies.linux]
+
+[project.build]
+packages = ["subprocess", "venv", "os", "sys", "json", "datetime", "shutil", "locale", "zpp_args", "zpp_config", "psutil"]
+includes = ["zpenv"]
+excludes = []
+include_files = []
+optimize = 0
+no_compress = false
+GUI = false
+icon = ""
+
+[project.wheel]
+platforms = "ALL"
+
+[project.wheel.entry_points]
+console_scripts = ['zpenv = zpenv.__main__:main']

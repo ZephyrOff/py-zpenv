@@ -1,16 +1,3 @@
-####################################################################
-#/ Nom du projet: py-zpenv.py                                     /#
-#/ Nom du fichier: zpenv.py                                        /#
-#/ Type de fichier: fichier principal                             /#
-#/ Fichier annexe:                                                /#
-#/                                                                /#
-#/ Auteur: ZephyrOff  (Alexandre Pajak)                           /#
-#/ Version: 1.0.2                                                 /#
-#/ Description: Gestionnaire d'environnement virtuel              /#
-#/                                                                /#
-#/ Date: 26/12/2022                                               /#
-####################################################################
-
 import subprocess
 import zpp_args
 from zpp_config import Config
@@ -33,13 +20,19 @@ def path_reg(arg):
 #Cherche le terminal (cmd,powershell,bash...) sur lequel est exécuté l'app
 def get_os():
 	if os.name=="nt":
-		if "zpenv" not in psutil.Process(os.getppid()).name():
-			return psutil.Process(os.getppid()).name()
-		else:
-			return psutil.Process(psutil.Process(os.getppid()).ppid()).name()
+		try:
+			if "zpenv" not in psutil.Process(os.getppid()).name():
+				return psutil.Process(os.getppid()).name()
+			else:
+				return psutil.Process(psutil.Process(os.getppid()).ppid()).name()
+		except:
+			return "cmd"
 		#return os.popen(f'powershell.exe -Command "ps -Id {PID} | Select-Object -ExpandProperty Name"').read().strip()
 	else:
-		return os.popen(f'ps -p {os.getppid()} -o comm=').read().strip()
+		try:
+			return os.popen(f'ps -p {os.getppid()} -o comm=').read().strip()
+		except:
+			return "linux"
 
 def lang(data, local = locale.getdefaultlocale()[0]):
 	if local=="fr_FR":
@@ -49,14 +42,17 @@ def lang(data, local = locale.getdefaultlocale()[0]):
 
 #Création du context
 class Context:
-	def __init__(self, virtdir, virtname = None):
+	def __init__(self, virtdir, virtname=None, prompt=None):
 		self.env_dir = virtdir
 		if virtname==None:
 			name = virtdir.split(path_rep[0])
 			self.env_name = name[len(name)-1]
 		else:
 			self.env_name = virtname
-		self.prompt = f'({self.env_name}) '
+		if prompt!=None:
+			self.prompt = f'({prompt}) '
+		else:
+			self.prompt = f'({self.env_name}) '
 		self.executable = sys.executable
 		self.python_dir = os.path.dirname(sys.executable)
 		self.python_exe = sys.executable.replace(self.python_dir,"").replace(path_rep[0],"")
@@ -231,6 +227,7 @@ def main():
 	parse.set_argument("u", longname="upgrademodule", description=lang(["Upgrade de module","Upgrade module"]), store="value", default=None, category="Package management")
 	parse.set_argument("R", longname="requirement", description=lang(["Installer module depuis fichier requirement","Install module from requirement file"]), store="value", default=None, category="Package management")
 	parse.set_argument(longname="proxy", description=lang(["Utiliser un proxy pour les installations","Use a proxy for installations"]), store="value", default=None, category="Package management")
+	parse.set_argument(longname="local", description=lang(["Utiliser le fichier zpenv.cfg du répertoire courant","Use the zpenv.cfg file from the current directory"]), default=None)
 	parse.set_argument(longname="configfile", description=lang(["Fichier de configuration des environnements","Environments configuration file"]), store="value", default=None)
 	parse.set_argument(longname="nodate", description=lang(["Désactiver l'affichage de la date dans les logs","Disable date in the logs"]), default=False)
 	parse.set_argument(longname="nolog", description=lang(["Désactiver l'affichage des logs","Disable display of logs"]), default=False)
@@ -243,6 +240,7 @@ def main():
 	parse.set_argument(longname="upgradepython", description=lang(["Mettre à jour la version de python","Upgrade Python version"]), default=False, category="Install/Management")
 	parse.set_argument("U", longname="upgradepip", description=lang(["Mettre à jour pip pendant l'installation","Upgrade pip during installation"]), default=False, category="Install")
 	parse.set_argument("p", longname="nopip", description=lang(["Ne pas installer pip","Do not install pip"]), default=False, category="Install")
+	parse.set_argument(longname="prompt", description=lang(["Spécifier le message du prompt","Specify prompt message"]), store="value", default=None, category="Install")
 	parse.set_argument("t", longname="tag", description=lang(["Ajouter/Lister des tags","Add/List tags"]), store="value", default=None, category="Install/Management")
 	parse.set_argument("c", longname="comment", description=lang(["Ajouter un commentaire","Add a comment"]), store="value", default=None, category="Install/Management")
 	parse.set_argument("D", longname="projectfolder", description=lang(["Spécifier un dossier de projet","Specify a project folder"]), store="value", default=None, category="Install/Management")
@@ -262,14 +260,17 @@ def main():
 	    path_rep = ["/","\\"]
 
 	if parameter!=None and argument!=None:
+		if argument.local:
+			argument.configfile = 'zpenv.cfg'
 		if argument.configfile==None:
 			argument.configfile = os.path.split(__file__)[0] + path_rep[0] + 'zpenv.cfg'
+
 		if argument.install:
 			for paramenv in parameter[0].split(","):
 				print_log(lang([f"Environnement {paramenv}", f"Environment {paramenv}"]))
 				print_log(lang(["Création du contexte","Create context"]))
 				virtdir = path_reg(paramenv)
-				context = Context(virtdir, argument.name)
+				context = Context(virtdir, argument.name, argument.prompt)
 
 				envc = load_venv(context.env_name)
 				if envc==False:
@@ -290,7 +291,7 @@ def main():
 						print_log(lang(['vous ne pouvez pas fournir --nopip et --installmodule ensemble','you cannot supply --nopip and --installmodule together']))
 					
 					print_log(lang(["Init builder","Init builder"]))
-					virtual = venv.EnvBuilder(system_site_packages=argument.sitepackages, clear=argument.clear, symlinks=argument.symlinks, upgrade=argument.upgradepython, upgrade_deps=argument.upgradepip)
+					virtual = venv.EnvBuilder(system_site_packages=argument.sitepackages, clear=argument.clear, symlinks=argument.symlinks, upgrade=argument.upgradepython, upgrade_deps=argument.upgradepip, prompt=argument.prompt)
 					
 					print_log(lang(["Création du dossier de l'environnement","Create environment directory"]))
 					virtual.ensure_directories(virtdir)
