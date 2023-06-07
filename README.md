@@ -96,6 +96,11 @@ ou pour installer des packages depuis un fichier requirement
 ```console
 [user@host ~]$ zpenv --upgrademodule [package]
 ```
+
+### Installation de pip
+```console
+[user@host ~]$ zpenv --installpip
+```
 <br><br>
 
 # EN - Informations
@@ -191,4 +196,9 @@ or to install packages from a requirement file
 ### Update a package
 ```console
 [user@host ~]$ zpenv --upgrademodule [package]
+```
+
+### Install pip
+```console
+[user@host ~]$ zpenv --installpip
 ```

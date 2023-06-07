@@ -173,11 +173,22 @@ def install_module(binpath,namemodule,proxy):
 	if proxy!=None:
 		cmd.append('--proxy='+proxy)
 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	stdout, stderr = proc.communicate()
-	if len(stdout)!=0:
-		print_log(lang([f"Module {namemodule} installé",f"Module {namemodule} installed"]))
-	else:
-		print_log(lang([f"ERREUR: Module {namemodule} non installé\nMessage d'erreur: {stderr.decode()}",f"ERROR: Module {namemodule} not installed\nError message: {stderr.decode()}"]))
+	while True:
+		output = proc.stdout.readline().decode("utf-8").strip()
+		if output == "":
+			break
+		print_log(output)
+
+	d_error = False
+	#Pour éviter les erreurs sur un pip pas à jour
+	if "A new release of pip available" not in proc.stderr.read().decode("utf-8").strip():
+		proc.stderr.seek(0)
+		for output in proc.stderr.readlines():
+			if len(output)>0 and d_error==False:
+				logs(f"ERREUR: Module {namemodule} non installé\nMessage d'erreur: {output.decode()}", "error")
+				d_error=True
+
+			print_log(output.decode("utf-8").strip(), "error")
 
 #Suppression d'un module dans un environnement
 def remove_module(binpath,namemodule):
@@ -187,11 +198,23 @@ def remove_module(binpath,namemodule):
 	
 	cmd = [binpath, '-m', 'pip', 'uninstall', '-y', namemodule]
 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	stdout, stderr = proc.communicate()
-	if len(stdout)!=0:
-		print_log(lang([f"Module {namemodule} supprimé",f"Module {namemodule} deleted"]))
-	else:
-		print_log(lang([f"ERREUR: Module {namemodule} non supprimé\nMessage d'erreur: {stderr.decode()}",f"ERROR: Module {namemodule} not deleted\nError message: {stderr.decode()}"]))
+	while True:
+		output = proc.stdout.readline().decode("utf-8").strip()
+		if output == "":
+			break
+
+		print_log(output)
+
+	d_error = False
+
+	proc.stderr.seek(0)
+	for output in proc.stderr.readlines():
+		if len(output)>0 and d_error==False:
+			print_log(lang([f"ERREUR: Module {namemodule} non supprimé\nMessage d'erreur: {stderr.decode()}",f"ERROR: Module {namemodule} not deleted\nError message: {stderr.decode()}"]))
+			d_error=True
+
+		print_log(output.decode("utf-8").strip(), "error")
+
 	
 	
 #Upgrade d'un module dans un environnement
@@ -205,11 +228,23 @@ def upgrade_module(binpath,namemodule,proxy):
 		cmd.append('--proxy='+proxy)
 
 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	stdout, stderr = proc.communicate()
-	if len(stdout)!=0:
-		print_log(lang([f"Module {namemodule} mis à jour",f"Module {namemodule} updated"]))
-	else:
-		print_log(lang([f"ERREUR: Module {namemodule} non mis à jour\nMessage d'erreur: {stderr.decode()}",f"ERROR: Module {namemodule} not updated\nError message: {stderr.decode()}"]))
+	while True:
+		output = proc.stdout.readline().decode("utf-8").strip()
+		if output == "":
+			break
+
+		print_log(output)
+
+	d_error = False
+	#Pour éviter les erreurs sur un pip pas à jour
+	if "A new release of pip available" not in proc.stderr.read().decode("utf-8").strip():
+		proc.stderr.seek(0)
+		for output in proc.stderr.readlines():
+			if len(output)>0 and d_error==False:
+				print_log(lang([f"ERREUR: Module {namemodule} non mis à jour\nMessage d'erreur: {stderr.decode()}",f"ERROR: Module {namemodule} not updated\nError message: {stderr.decode()}"]))
+				d_error=True
+
+			print_log(output.decode("utf-8").strip(), "error")
 
 
 def main():
@@ -238,6 +273,7 @@ def main():
 		parse.set_argument("s", longname="symlinks", description=lang(["Tenter d'utiliser un symlink","Attempt to use a symlink"]), default=False, category="Install")
 	parse.set_argument("C", longname="clear", description=lang(["Nettoyer le dossier de l'environnement","Clear environment folder"]), default=False, category="Install")
 	parse.set_argument(longname="upgradepython", description=lang(["Mettre à jour la version de python","Upgrade Python version"]), default=False, category="Install/Management")
+	parse.set_argument(longname="installpip", description=lang(["Installer pip","Install pip"]), default=None, category="Install/Management")
 	parse.set_argument("U", longname="upgradepip", description=lang(["Mettre à jour pip pendant l'installation","Upgrade pip during installation"]), default=False, category="Install")
 	parse.set_argument("p", longname="nopip", description=lang(["Ne pas installer pip","Do not install pip"]), default=False, category="Install")
 	parse.set_argument(longname="prompt", description=lang(["Spécifier le message du prompt","Specify prompt message"]), store="value", default=None, category="Install")
@@ -658,3 +694,19 @@ def main():
 					edit_venv(paramenv,"tag",",".join(tag))
 				if envc==False:
 					print_log(lang([f"L'environnement {paramenv} n'existe pas", f"Environment {paramenv} doesn't exist"]))
+		
+		elif argument.installpip:
+			for paramenv in parameter[0].split(","):
+				print_log(lang([f"Environnement {paramenv}", f"Environment {paramenv}"]))
+				envc = load_venv(paramenv)
+				if envc!=False and envc!=None:
+					print_log(lang([f"Installation de pip", f"Install pip"]))
+					cmd = [envc['env_exe'], '-m', 'ensurepip']
+					if argument.proxy!=None:
+						cmd.append('--proxy='+argument.proxy)
+					proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					stdout, stderr = proc.communicate()
+					if len(stdout)!=0:
+						print_log(lang([f"Pip installé",f"Pip installed"]))
+					else:
+						print_log(lang([f"ERREUR: Pip non installé\nMessage d'erreur: {stderr.decode()}",f"ERROR: Pip not installed\nError message: {stderr.decode()}"]))
