@@ -12,3 +12,6 @@
 ## [1.3.0] - 2023-06-07
 - Ajout de l'option installpip
 - Meilleure gestion des logs lors de l'installation, suppression ou mise à jour d'un package
+
+## [1.3.1] - 2023-06-13
+- Changement du dossier Scripts en fonction de l'environnement

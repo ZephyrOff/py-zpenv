@@ -59,7 +59,9 @@ class Context:
 		self.inc_path = virtdir + path_rep[0] +'Include'
 		self.lib_path = virtdir + path_rep[0] +'Lib'
 		self.bin_path = virtdir + path_rep[0] +'Scripts'
-		self.bin_name = 'Scripts'
+		self.bin_name = 'bin'
+		if sys.platform == 'win32':
+			self.bin_name = 'Scripts'
 		self.env_exe = self.bin_path + path_rep[0] + self.python_exe
 		self.env_exec_cmd = self.env_exe
 		self.cfg_path = virtdir + path_rep[0] + 'pyvenv.cfg'
